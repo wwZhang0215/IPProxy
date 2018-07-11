@@ -8,9 +8,10 @@ from IP import IP
 
 
 class IPProxy:
-    def __init__(self, online=True):
+    def __init__(self, maxip=15, online=True):
         self.IPPool = []
         self.checkedUrl = []
+        self.maxip = maxip
         # init from saved file
         self.addFromFile()
         if online:
@@ -24,7 +25,7 @@ class IPProxy:
             return
         if self._checkConnection(ip):
             self.IPPool.append(ip)
-            print 'add proxy (' + str(len(self.IPPool)) + '/15)'
+            print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
         else:
             return 'proxy ip not usable'
 
@@ -49,7 +50,9 @@ class IPProxy:
             ip.setProxy(ipSet[0], ipSet[1], ipSet[2])
             if self._checkConnection(ip) is True:
                 self.IPPool.append(ip)
-                print 'add proxy (' + str(len(self.IPPool)) + '/15)'
+                print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
+            if len(self.IPPool) >= self.maxip:
+                break
 
     def _checkConnection(self, IP, url='http://www.baidu.com', **kwargs):
         try:
@@ -118,8 +121,8 @@ class IPProxy:
         return availableIPs
 
     # 获取单个
-    def getAvailableIP(self, rootUrl, minAvailable=0, **kwargs):
-        ips = self._getAllAvailableIP(rootUrl, minAvailable, **kwargs)
+    def getAvailableIP(self, rootUrl, **kwargs):
+        ips = self._getAllAvailableIP(rootUrl, **kwargs)
         if ips == 'no proxy ip available':
             return {}
         ips.sort()
@@ -137,10 +140,10 @@ class IPProxy:
         header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0'}
         for page in range(1, 5):
             try:
-                if len(self.IPPool) >= 15:
+                if len(self.IPPool) >= self.maxip:
                     break
                 response = requests.get('http://www.xicidaili.com/nn/' + str(page), headers=header).text
-                soupIP = BeautifulSoup(response)
+                soupIP = BeautifulSoup(response, "html.parser")
                 trs = soupIP.find_all('tr')
                 for tr in trs[1:]:
                     tds = tr.find_all('td')
@@ -151,7 +154,7 @@ class IPProxy:
                         self.addToPool(ip, port)
                     elif protocol == 'HTTPS':
                         self.addToPool(ip, port, 'https')
-                    if len(self.IPPool) >= 15:
+                    if len(self.IPPool) >= self.maxip:
                         break
             except:
                 continue
@@ -170,7 +173,7 @@ if __name__ == '__main__':
     # print a
     # test.getOnlineIP()
     # print test.getAllAvailableIP('http://www.bilibili.com')
-    print test.getAvailableIP('http://www.bilibili.com')
+    print test.getAvailableIP('http://www.bilibili.com', headers={})
     print test.getAvailableIP('http://www.bilibili.com')
     print test.getAvailableIP('http://www.bilibili.com')
     print test.getAvailableIP('http://www.bilibili.com')
