@@ -3,7 +3,7 @@
 自动从免费网站获取可用IP并提供ip自动选择的代理ip项目
 
 ### 使用说明
-#####初始化IPProxy
+##### 初始化IPProxy
 
 ``` python
 import IPProxy
@@ -12,7 +12,7 @@ ipproxy = IPProxy()
 # 若IP总数不足15(数量可自定)
 # 则自动从www.xicidaili.com获取ip列表
 ```
-#####从ip池中获取ip
+##### 从ip池中获取ip
 
 ``` Python
 import IPProxy
@@ -28,7 +28,7 @@ proxies = ipproxy.getAvailableIP(rootUrl)
 # getAvailableIP()不支持params参数
 ```
 
-#####访问失败
+##### 访问失败
 ``` Python
 import IPProxy
 ipproxy = IPProxy()
@@ -41,5 +41,5 @@ except requests.exceptions.ProxyError:
 	ipproxy.delBadProxy(proxies)
 # delBadProxy()可以将无法连接目标地址或被目标地址屏蔽的ip代理从代理池中移除
 ```
-#####更多api信息
+##### 更多api信息
 [more api](api.md)
