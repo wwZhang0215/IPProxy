@@ -4,12 +4,13 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-from IP import IP
+# from IP import IP
 
 
 class IPProxy:
     def __init__(self, maxip=15, online=True):
         self.IPPool = []
+        self.failedPool = []
         self.checkedUrl = []
         self.maxip = maxip
         # init from saved file
@@ -19,7 +20,7 @@ class IPProxy:
 
     # 手动增加IP代理地址
     def addToPool(self, address, port, httpType='http'):
-        ip = IP()
+        ip = self.IP()
         ip.setProxy(httpType, address, port)
         if ip in self.IPPool:
             return
@@ -35,7 +36,7 @@ class IPProxy:
         for proxy in proxies:
             string = proxies[proxy]
             spilt = string.split(':')
-            ip = IP()
+            ip = self.IP()
             ip.setProxy(proxy, spilt[0], spilt[1])
             self.IPPool.remove(ip)
 
@@ -46,7 +47,7 @@ class IPProxy:
         ipFile = open(filename, 'r')
         for line in ipFile.readlines():
             ipSet = line.split('\n')[0].split(' ')
-            ip = IP()
+            ip = self.IP()
             ip.setProxy(ipSet[0], ipSet[1], ipSet[2])
             if self._checkConnection(ip) is True:
                 self.IPPool.append(ip)
@@ -100,6 +101,7 @@ class IPProxy:
             for ip in self.IPPool:
                 if rootUrl in ip.banList:
                     self.IPPool.remove(ip)
+                    self.failedPool.append(ip._ip)
             self.getOnlineIP()
             availableIPs = self._getAllAvailableIP(rootUrl)
         return availableIPs
@@ -148,6 +150,9 @@ class IPProxy:
                 for tr in trs[1:]:
                     tds = tr.find_all('td')
                     ip = tds[1].text.strip()
+                    if ip in self.failedPool:
+                        print 'skip'
+                        continue
                     port = tds[2].text.strip()
                     protocol = tds[5].text.strip()
                     if protocol == 'HTTP':
@@ -158,6 +163,42 @@ class IPProxy:
                         break
             except:
                 continue
+
+    class IP:
+        def __init__(self):
+            self._httpType = 'http'  # http/https
+            self._ip = '127.0.0.1'
+            self._port = '80'
+            self.banList = []
+            self.lastUsedTime = 0
+
+        def setProxy(self, httpType, ip, port):
+            self.setType(httpType)
+            self.setPort(port)
+            self.setIP(ip)
+
+        def setType(self, httpType):
+            self._httpType = httpType
+
+        def setIP(self, ip):
+            self._ip = ip
+
+        def setPort(self, port):
+            self._port = port
+
+        def getProxyDict(self):
+            return {self._httpType: self._ip + ':' + self._port}
+
+        def getString(self):
+            return self._httpType + ' ' + self._ip + ' ' + self._port
+
+        def __cmp__(self, other):
+            if self.getString() == other.getString():
+                return 0
+            if self.lastUsedTime < other.lastUsedTime:
+                return -1
+            else:
+                return 1
 
 
 if __name__ == '__main__':

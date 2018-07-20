@@ -1,0 +1,12 @@
+Metadata-Version: 1.1
+Name: IPProxy
+Version: 0.3
+Summary: ip tool for proxy
+Home-page: https://github.com/johnsonzww/IPProxy
+Author: 张文纬
+Author-email: z929527511@outlook.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires: bs4
+Requires: requests
