@@ -151,7 +151,7 @@ class IPProxy:
                     tds = tr.find_all('td')
                     ip = tds[1].text.strip()
                     if ip in self.failedPool:
-                        print 'skip'
+                        # print 'skip'
                         continue
                     port = tds[2].text.strip()
                     protocol = tds[5].text.strip()

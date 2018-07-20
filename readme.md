@@ -3,10 +3,18 @@
 自动从免费网站获取可用IP并提供ip自动选择的代理ip项目
 
 ### 使用说明
+##### 项目要求
+python 2.7
+##### 安装IPProxy
+[下载](dist)最新版本的IPProxy
+解压tar.gz文件
+在当前目录下执行
+>python setup.py install
+
 ##### 初始化IPProxy
 
 ``` python
-import IPProxy
+from IPProxy import IPProxy
 ipproxy = IPProxy() 
 # 默认首先从save.txt读取ip列表
 # 若IP总数不足15(数量可自定)
@@ -15,7 +23,7 @@ ipproxy = IPProxy()
 ##### 从ip池中获取ip
 
 ``` Python
-import IPProxy
+from IPProxy import IPProxy
 ipproxy = IPProxy()
 rootUrl = 'http://www.baidu.com'
 proxies = ipproxy.getAvailableIP(rootUrl)
@@ -30,7 +38,7 @@ proxies = ipproxy.getAvailableIP(rootUrl)
 
 ##### 访问失败
 ``` Python
-import IPProxy
+from IPProxy import IPProxy
 ipproxy = IPProxy()
 rootUrl = 'http://www.baidu.com'
 proxies = ipproxy.getAvailableIP(rootUrl)
