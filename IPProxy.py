@@ -39,6 +39,7 @@ class IPProxy:
             ip = self.IP()
             ip.setProxy(proxy, spilt[0], spilt[1])
             self.IPPool.remove(ip)
+            self.failedPool.append(ip._ip)
 
     # 从文件中读取ip地址
     # 每行一个ip
