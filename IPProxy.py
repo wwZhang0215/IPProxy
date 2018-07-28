@@ -2,6 +2,7 @@
 import time
 
 import requests
+import threading
 from bs4 import BeautifulSoup
 
 # from IP import IP
@@ -9,6 +10,7 @@ from bs4 import BeautifulSoup
 
 class IPProxy:
     def __init__(self, maxip=15, online=True):
+        self.lock = threading.Lock()
         self.IPPool = []
         self.failedPool = []
         self.checkedUrl = []
@@ -25,7 +27,9 @@ class IPProxy:
         if ip in self.IPPool:
             return
         if self._checkConnection(ip):
+            self.lock.acquire()  # lock
             self.IPPool.append(ip)
+            self.lock.release()  # unlock
             print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
         else:
             return 'proxy ip not usable'
@@ -38,14 +42,19 @@ class IPProxy:
             spilt = string.split(':')
             ip = self.IP()
             ip.setProxy(proxy, spilt[0], spilt[1])
+            # under lock
+            self.lock.acquire()
             self.IPPool.remove(ip)
             self.failedPool.append(ip._ip)
+            self.lock.release()
 
     # 从文件中读取ip地址
     # 每行一个ip
     # ip格式 http/https空格*.*.*.*空格端口号
     def addFromFile(self, filename='save.txt'):
         ipFile = open(filename, 'r')
+        # under lock
+        self.lock.acquire()
         for line in ipFile.readlines():
             ipSet = line.split('\n')[0].split(' ')
             ip = self.IP()
@@ -55,6 +64,7 @@ class IPProxy:
                 print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
             if len(self.IPPool) >= self.maxip:
                 break
+        self.lock.release()
 
     def _checkConnection(self, IP, url='http://www.baidu.com', **kwargs):
         try:
@@ -73,6 +83,8 @@ class IPProxy:
             return response.status_code
 
     def checkConnection(self, url, **kwargs):
+        # lock
+        self.lock.acquire()
         for ip in self.IPPool:
             try:
                 if self._checkConnection(ip, url, **kwargs) is not True:
@@ -80,6 +92,7 @@ class IPProxy:
             except:
                 ip.banList.append(url)
                 continue
+        self.lock.release()
 
     # rootUrl:网页根地址,如http://www.baidu.com
     def _getAllAvailableIP(self, rootUrl, minAvailable=0, **kwargs):
@@ -98,13 +111,16 @@ class IPProxy:
             print'no proxy ip available'
             print'getting online ips'
             # return 'no proxy ip available'
+            self.lock.acquire()
             self.checkedUrl.remove(rootUrl)
             for ip in self.IPPool:
                 if rootUrl in ip.banList:
                     self.IPPool.remove(ip)
                     self.failedPool.append(ip._ip)
+            self.lock.release()
             self.getOnlineIP()
             availableIPs = self._getAllAvailableIP(rootUrl)
+
         return availableIPs
 
     r"""Sends a GET request.
@@ -140,6 +156,7 @@ class IPProxy:
         saveFile.close()
 
     def getOnlineIP(self):
+        self.lock.acquire()
         header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0'}
         for page in range(1, 5):
             try:
@@ -164,6 +181,7 @@ class IPProxy:
                         break
             except:
                 continue
+        self.lock.release()
 
     class IP:
         def __init__(self):
