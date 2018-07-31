@@ -51,3 +51,15 @@ except requests.exceptions.ProxyError:
 ```
 ##### 更多api信息
 [more api](api.md)
+
+#### 更新说明
+
+##### v0.7
+
+* 添加了自动更新的功能，IPProxy创建后自动每分钟更新，无需更多操作
+
+##### v0.6
+
+* 添加了多线程支持，避免死锁
+* 一些小的改进
+
