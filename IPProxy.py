@@ -10,6 +10,8 @@ from bs4 import BeautifulSoup
 
 class IPProxy:
     def __init__(self, maxip=15, online=True):
+        self._autoRefreshThread = threading.Thread(target=self._autoRefresh)
+
         self.lock = threading.Lock()
         self.IPPool = []
         self.failedPool = []
@@ -19,6 +21,7 @@ class IPProxy:
         self.addFromFile()
         if online:
             self.getOnlineIP()
+        self._autoRefreshThread.start()
 
     # 手动增加IP代理地址
     def addToPool(self, address, port, httpType='http'):
@@ -27,9 +30,9 @@ class IPProxy:
         if ip in self.IPPool:
             return
         if self._checkConnection(ip):
-            self.lock.acquire()  # lock
+            # self.lock.acquire()  # lock
             self.IPPool.append(ip)
-            self.lock.release()  # unlock
+            # self.lock.release()  # unlock
             print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
         else:
             return 'proxy ip not usable'
@@ -182,6 +185,15 @@ class IPProxy:
             except:
                 continue
         self.lock.release()
+
+    def _autoRefresh(self):
+        while 1:
+            # 每分钟刷新
+            time.sleep(60)
+            print 'refresh'
+            if len(self.IPPool) < self.maxip/2:
+                self.getOnlineIP()
+
 
     class IP:
         def __init__(self):
