@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='IPProxy',
-    version='0.7',
+    version='0.8',
     packages=[''],
     url='https://github.com/johnsonzww/IPProxy',
     license='',

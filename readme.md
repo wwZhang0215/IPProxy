@@ -54,6 +54,10 @@ except requests.exceptions.ProxyError:
 
 #### 更新说明
 
+##### v0.8
+
+* bug fix
+
 ##### v0.7
 
 * 添加了自动更新的功能，IPProxy创建后自动每分钟更新，无需更多操作

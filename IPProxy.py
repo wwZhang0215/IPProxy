@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import time
 
 import requests
@@ -55,7 +56,12 @@ class IPProxy:
     # 每行一个ip
     # ip格式 http/https空格*.*.*.*空格端口号
     def addFromFile(self, filename='save.txt'):
-        ipFile = open(filename, 'r')
+        # if os.path.exists(filename):
+        #     ipFile = open(filename, 'r')
+        # else:
+        #     os.mknod(filename)
+        ipFile = open(filename, 'a+')
+
         # under lock
         self.lock.acquire()
         for line in ipFile.readlines():
