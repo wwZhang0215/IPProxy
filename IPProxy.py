@@ -22,7 +22,7 @@ class IPProxy:
         self.addFromFile()
         if online:
             self.getOnlineIP()
-        self._autoRefreshThread.start()
+        # self._autoRefreshThread.start()
 
     # 手动增加IP代理地址
     def addToPool(self, address, port, httpType='http'):
@@ -65,6 +65,8 @@ class IPProxy:
         # under lock
         self.lock.acquire()
         for line in ipFile.readlines():
+            if line == '\n':
+                break
             ipSet = line.split('\n')[0].split(' ')
             ip = self.IP()
             ip.setProxy(ipSet[0], ipSet[1], ipSet[2])
@@ -73,6 +75,7 @@ class IPProxy:
                 print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
             if len(self.IPPool) >= self.maxip:
                 break
+        ipFile.close()
         self.lock.release()
 
     def _checkConnection(self, IP, url='http://www.baidu.com', **kwargs):
@@ -157,12 +160,7 @@ class IPProxy:
         ips[0].lastUsedTime = time.time()
         return ips[0].getProxyDict()
 
-    def __del__(self):
-        # write pool to file
-        saveFile = open('save.txt', 'w')
-        for ip in self.IPPool:
-            saveFile.write(ip.getString() + '\n')
-        saveFile.close()
+
 
     def getOnlineIP(self):
         self.lock.acquire()
@@ -199,6 +197,13 @@ class IPProxy:
             print 'refresh'
             if len(self.IPPool) < self.maxip/2:
                 self.getOnlineIP()
+
+    def __del__(self):
+        # write pool to file
+        saveFile = open('save.txt', 'w')
+        for ip in self.IPPool:
+            saveFile.write(ip.getString() + '\n')
+        saveFile.close()
 
 
     class IP:
@@ -251,14 +256,8 @@ if __name__ == '__main__':
     # print a
     # test.getOnlineIP()
     # print test.getAllAvailableIP('http://www.bilibili.com')
-    print test.getAvailableIP('http://www.bilibili.com', headers={})
-    print test.getAvailableIP('http://www.bilibili.com')
-    print test.getAvailableIP('http://www.bilibili.com')
-    print test.getAvailableIP('http://www.bilibili.com')
-    print test.getAvailableIP('http://www.bilibili.com')
-    print test.getAvailableIP('http://www.bilibili.com')
-    print test.getAvailableIP('http://www.bilibili.com')
-    print test.getAvailableIP('http://www.bilibili.com')
-    print test.getAllAvailableIP('http://www.bilibili.com', 9)
+    # print test.getAvailableIP('http://www.bilibili.com', headers={})
+    test.__del__()
+    # print test.getAllAvailableIP('http://www.bilibili.com', 9)
 
     # print test.gettAvailableIP('http://www.baidu.com')
