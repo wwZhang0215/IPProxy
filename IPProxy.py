@@ -10,9 +10,7 @@ from bs4 import BeautifulSoup
 
 
 class IPProxy:
-    def __init__(self, maxip=15, online=True):
-        self._autoRefreshThread = threading.Thread(target=self._autoRefresh)
-
+    def __init__(self, maxip=15, online=True, autoRefesh=True):
         self.lock = threading.Lock()
         self.IPPool = []
         self.failedPool = []
@@ -22,7 +20,11 @@ class IPProxy:
         self.addFromFile()
         if online:
             self.getOnlineIP()
-        # self._autoRefreshThread.start()
+        self.__save2File()
+        if autoRefesh:
+            self.__autoRefreshThread = threading.Thread(target=self.__autoRefresh)
+            self.__autoRefreshThread.setDaemon(True)
+            self.__autoRefreshThread.start()
 
     # 手动增加IP代理地址
     def addToPool(self, address, port, httpType='http'):
@@ -30,7 +32,7 @@ class IPProxy:
         ip.setProxy(httpType, address, port)
         if ip in self.IPPool:
             return
-        if self._checkConnection(ip):
+        if self.__checkConnection(ip):
             # self.lock.acquire()  # lock
             self.IPPool.append(ip)
             # self.lock.release()  # unlock
@@ -70,7 +72,7 @@ class IPProxy:
             ipSet = line.split('\n')[0].split(' ')
             ip = self.IP()
             ip.setProxy(ipSet[0], ipSet[1], ipSet[2])
-            if self._checkConnection(ip) is True:
+            if self.__checkConnection(ip) is True:
                 self.IPPool.append(ip)
                 print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
             if len(self.IPPool) >= self.maxip:
@@ -78,7 +80,7 @@ class IPProxy:
         ipFile.close()
         self.lock.release()
 
-    def _checkConnection(self, IP, url='http://www.baidu.com', **kwargs):
+    def __checkConnection(self, IP, url='http://www.baidu.com', **kwargs):
         try:
             # try1 = IP.getProxyDict()
             response = requests.get(url, proxies=IP.getProxyDict(), timeout=5, **kwargs)
@@ -94,12 +96,12 @@ class IPProxy:
                 return "banned"
             return response.status_code
 
-    def checkConnection(self, url, **kwargs):
+    def checkConnection(self, url='http://www.baidu.com', **kwargs):
         # lock
         self.lock.acquire()
         for ip in self.IPPool:
             try:
-                if self._checkConnection(ip, url, **kwargs) is not True:
+                if self.__checkConnection(ip, url, **kwargs) is not True:
                     ip.banList.append(url)
             except:
                 ip.banList.append(url)
@@ -107,7 +109,7 @@ class IPProxy:
         self.lock.release()
 
     # rootUrl:网页根地址,如http://www.baidu.com
-    def _getAllAvailableIP(self, rootUrl, minAvailable=0, **kwargs):
+    def __getAllAvailableIP(self, rootUrl='http://www.baidu.com', minAvailable=0, **kwargs):
         availableIPs = []
         if rootUrl not in self.checkedUrl:
             print 'checking ip available for ' + rootUrl
@@ -131,7 +133,7 @@ class IPProxy:
                     self.failedPool.append(ip._ip)
             self.lock.release()
             self.getOnlineIP()
-            availableIPs = self._getAllAvailableIP(rootUrl)
+            availableIPs = self.__getAllAvailableIP(rootUrl)
 
         return availableIPs
 
@@ -144,16 +146,16 @@ class IPProxy:
         :rtype: requests.Response
         """
 
-    def getAllAvailableIP(self, rootUrl, minAvailable=0, **kwargs):
-        allIPs = self._getAllAvailableIP(rootUrl, minAvailable, **kwargs)
+    def getAllAvailableIP(self, rootUrl='http://www.baidu.com', minAvailable=0, **kwargs):
+        allIPs = self.__getAllAvailableIP(rootUrl, minAvailable, **kwargs)
         availableIPs = []
         for ip in allIPs:
             availableIPs.append(ip.getProxyDict())
         return availableIPs
 
     # 获取单个
-    def getAvailableIP(self, rootUrl, **kwargs):
-        ips = self._getAllAvailableIP(rootUrl, **kwargs)
+    def getAvailableIP(self, rootUrl='http://www.baidu.com', **kwargs):
+        ips = self.__getAllAvailableIP(rootUrl, **kwargs)
         if ips == 'no proxy ip available':
             return {}
         ips.sort()
@@ -190,20 +192,24 @@ class IPProxy:
                 continue
         self.lock.release()
 
-    def _autoRefresh(self):
+    def __autoRefresh(self):
         while 1:
             # 每分钟刷新
             time.sleep(60)
             print 'refresh'
             if len(self.IPPool) < self.maxip/2:
                 self.getOnlineIP()
+            self.__save2File()
 
-    def __del__(self):
+    def __save2File(self):
         # write pool to file
         saveFile = open('save.txt', 'w')
         for ip in self.IPPool:
             saveFile.write(ip.getString() + '\n')
         saveFile.close()
+
+    def __del__(self):
+        self.__save2File()
 
 
     class IP:
@@ -244,7 +250,7 @@ class IPProxy:
 
 
 if __name__ == '__main__':
-    test = IPProxy()
+    test = IPProxy(autoRefesh=False)
     # test.addFromFile('ip.txt')
     # testip = IP()
     # testip.setProxy('https', '0.0.0.0', '80')
@@ -257,7 +263,6 @@ if __name__ == '__main__':
     # test.getOnlineIP()
     # print test.getAllAvailableIP('http://www.bilibili.com')
     # print test.getAvailableIP('http://www.bilibili.com', headers={})
-    test.__del__()
-    # print test.getAllAvailableIP('http://www.bilibili.com', 9)
+    print test.getAllAvailableIP('http://www.bilibili.com', 9)
 
     # print test.gettAvailableIP('http://www.baidu.com')

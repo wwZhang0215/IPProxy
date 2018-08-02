@@ -54,6 +54,11 @@ except requests.exceptions.ProxyError:
 
 #### 更新说明
 
+##### v0.9
+
+* 更改自动刷新线程逻辑
+* 根据整合需求进行了改动
+
 ##### v0.8
 
 * bug fix
