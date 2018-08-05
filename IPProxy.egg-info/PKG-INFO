@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: IPProxy
-Version: 0.9
+Version: 0.10
 Summary: ip tool for proxy
 Home-page: https://github.com/johnsonzww/IPProxy
 Author: 张文纬
@@ -10,3 +10,4 @@ Description: UNKNOWN
 Platform: UNKNOWN
 Requires: bs4
 Requires: requests
+Requires: selenium

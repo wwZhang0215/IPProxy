@@ -3,13 +3,21 @@
 自动从免费网站获取可用IP并提供ip自动选择的代理ip项目
 
 ### 使用说明
+
 ##### 项目要求
 python 2.7
+bs4
+requests
+selenium
+
 ##### 安装IPProxy
 [下载](dist)最新版本的IPProxy
 解压tar.gz文件
 在当前目录下执行
 >python setup.py install
+
+当需要获取国外代理时，需要将压缩包中的chromedriver.exe复制到项目目录下
+若复制后仍无法使用，请自行百度下载对应chrome版本的chromedriver
 
 ##### 初始化IPProxy
 
@@ -19,7 +27,9 @@ ipproxy = IPProxy()
 # 默认首先从save.txt读取ip列表
 # 若IP总数不足15(数量可自定)
 # 则自动从www.xicidaili.com获取ip列表
+# 国外IP使用请见更多api
 ```
+
 ##### 从ip池中获取ip
 
 ``` Python
@@ -53,6 +63,11 @@ except requests.exceptions.ProxyError:
 [more api](api.md)
 
 #### 更新说明
+
+##### v0.10
+
+* 添加了获取国外代理的途径，使用方法见更多api
+* 由于国外代理获取网站的获取速度较慢，保留了之前国内代理的获取路径
 
 ##### v0.9
 

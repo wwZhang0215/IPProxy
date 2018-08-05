@@ -1,19 +1,24 @@
 # Document
 
-> \_\_init\_\_(self, maxip=15, online=True)
+> \_\_init\_\_(self, maxip=15, online=True, autoRefresh=True, country='中国', minPoints=30, maxLatency=3)
 
 * 初始化ipproxy
 	* :param maxip:ip池中最大代理ip数量，默认值15
     * :param online:是否从网络获取免费ip代理，默认True
+    * :param autoRefresh:是否启用自动刷新线程
+    * :param country:当需要使用国外代理时修改此参数， 可用国家和地区：*美国 巴西 印尼 俄罗斯 法国 印度 香港 泰国 孟加拉*
+    * :param minPoints:国外代理评分最低限制，国内代理使用时可无视
+    * :param maxLatency:国外代理允许最长延迟，国内代理使用时可无视
     
 &nbsp;
 
-> addToPool(self, address, port, httpType='http')
+> addToPool(self, address, port, httpType='http', foreign='c')
 
 * 手动添加ip到ip池中
 	* :param address: ip地址
     * :param port: 端口号
     * :param httpType: http/https, 默认http
+    * :param foreign: c/f 默认c 用于标示该ip属于境内或者境外
     
 &nbsp;
 
@@ -66,9 +71,16 @@
     
 &nbsp;
 
-> getOnlineIP(self)
+> getForeignIP(self, country='中国', minPoints=50, maxLatency=5)
 
-* 从代理网站中自动获取可用代理
+* 从代理网站中自动获取可用国外代理
+    * 参数列表同__init__
+
+&nbsp;
+
+> getChineseIP(self):
+
+* 从代理网站中自动获取可用国内代理
 
 &nbsp;
 
