@@ -4,15 +4,15 @@ import time
 import requests
 import threading
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+# from selenium import webdriver
+# from selenium.webdriver.chrome.options import Options
 
 
 # from IP import IP
 
 
 class IPProxy:
-    def __init__(self, maxip=15, online=True, autoRefresh=True, country='中国', minPoints=30, maxLatency=3):
+    def __init__(self, maxip=15, online=True, autoRefresh=True, foreign=False, country='all'):
         self.lock = threading.Lock()
         self.IPPool = []
         self.failedPool = []
@@ -20,15 +20,16 @@ class IPProxy:
         self.maxip = maxip
         # init from saved file
 
-        if online and country == '中国':
+        if online and foreign is False:
             self.addFromFile()
             self.getChineseIP()
-        elif online and country != '中国':
+        elif online and foreign is True:
             self.addFromFile(foreign=True)
-            self.getForeignIP(country=country, minPoints=minPoints, maxLatency=maxLatency)
+            self.getForeignIP(country=country)
+            # self.getForeignIP(country=country, minPoints=minPoints, maxLatency=maxLatency)
         self.__save2File()
         if autoRefresh:
-            self.__autoRefreshThread = threading.Thread(target=self.__autoRefresh, args=((country == '中国'), country, minPoints, maxLatency))
+            self.__autoRefreshThread = threading.Thread(target=self.__autoRefresh, args=(foreign, country))
             self.__autoRefreshThread.setDaemon(True)
             self.__autoRefreshThread.start()
 
@@ -79,7 +80,10 @@ class IPProxy:
             if (ipSet[3] == 'f' and foreign == False) or (ipSet[3] == 'c' and foreign == True):
                 continue
             ip = self.IP()
-            ip.setProxy(ipSet[0], ipSet[1], ipSet[2], ipSet[3])
+            if len(ipSet) == 4:
+                ip.setProxy(ipSet[0], ipSet[1], ipSet[2], ipSet[3])
+            else:
+                ip.setProxy(ipSet[0], ipSet[1], ipSet[2], ipSet[3], ipSet[4].decode('gbk'))
             if self.__checkConnection(ip) is True:
                 self.IPPool.append(ip)
                 print 'add proxy ' + ip.getString() + ' (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
@@ -170,69 +174,104 @@ class IPProxy:
         ips[0].lastUsedTime = time.time()
         return ips[0].getProxyDict()
 
-    # 美国：us 巴西：br 印尼：id 俄罗斯：ru 法国：fr 印度：in 香港：hk 泰国：th 孟加拉：bd
-    def getForeignIP(self, country='中国', minPoints=50, maxLatency=5):
-        chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--disable-gpu')
-        driver = webdriver.Chrome(executable_path='chromedriver.exe', chrome_options=chrome_options)
-        countryDict = {'中国': 'cn',
-                       '美国': 'us',
-                       '巴西': 'br',
-                       '印尼': 'id',
-                       '俄罗斯': 'ru',
-                       '法国': 'fr',
-                       '印度': 'in',
-                       '香港': 'hk',
-                       '泰国': 'th',
-                       '孟加拉': 'bd',
-                       }
-        if not countryDict.has_key(country):
-            print '无法找到该国家代理,自动寻找中国代理'
-            country = 'cn'
-        else:
-            country = countryDict[country]
+    def getForeignIP(self, country='all'):
         self.lock.acquire()
-        # header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0'}
-        # payload = {'page': '1'}
-        url = 'https://proxy.coderbusy.com/classical/country/'+country+'.aspx?page=1'
-        while True:
+        header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0'}
+        for page in range(1, 5):
             try:
                 if len(self.IPPool) >= self.maxip:
                     break
-                driver.get(url)
-                # soupIP = BeautifulSoup(response, 'html.parser')
-                trList = driver.find_elements_by_tag_name('tr')
-                for tr in trList[1:]:
-                    tdList = tr.find_elements_by_tag_name('td')
-                    ip = tdList[0].text.strip()
+                response = requests.get('http://www.ip3366.net/free/?stype=3&page=' + str(page), headers=header)
+                response.encoding = 'gb2312'
+                response = response.text
+                response.decode('gb2312')
+                response.encode('utf8')
+                soupIP = BeautifulSoup(response, "html.parser")
+                trs = soupIP.find_all('tr')
+                for tr in trs[1:]:
+                    tds = tr.find_all('td')
+                    ip = tds[0].text.strip()
                     if ip in self.failedPool:
                         # print 'skip'
                         continue
-                    points = tdList[1].text
-                    port = tdList[2].text
-                    protocol = tdList[5].text.strip()
-                    delay = tdList[10].text[:-1]
-                    if float(points) < minPoints or float(delay) > maxLatency:
+                    port = tds[1].text.strip()
+                    location = tds[4].text.strip()
+                    if country != 'all' and country not in location:
                         continue
+                    protocol = tds[3].text.strip()
                     if protocol == 'HTTP':
-                        self.addToPool(ip, port, foreign='f')
+                        self.addToPool(ip, port, location=location, foreign='f')
                     elif protocol == 'HTTPS':
-                        self.addToPool(ip, port, httpType='https', foreign='f')
+                        self.addToPool(ip, port, httpType='https', location=location, foreign='f')
                     if len(self.IPPool) >= self.maxip:
                         break
-                pages = driver.find_elements_by_class_name('page-item')
-                nextPage = pages[len(pages) - 3].find_element_by_tag_name('a').get_attribute('href')
-                lastPage = pages[len(pages) - 2].find_element_by_tag_name('a').get_attribute('href')
-
-                if nextPage == lastPage:
-                    break
-                else:
-                    url = nextPage
-            except Exception, e:
-                print e.message
+            except:
                 continue
         self.lock.release()
+
+    # 美国：us 巴西：br 印尼：id 俄罗斯：ru 法国：fr 印度：in 香港：hk 泰国：th 孟加拉：bd
+    # def getForeignIP_old(self, country='中国', minPoints=50, maxLatency=5):
+    #     chrome_options = Options()
+    #     chrome_options.add_argument('--headless')
+    #     chrome_options.add_argument('--disable-gpu')
+    #     driver = webdriver.Chrome(executable_path='chromedriver.exe', chrome_options=chrome_options)
+    #     countryDict = {'中国': 'cn',
+    #                    '美国': 'us',
+    #                    '巴西': 'br',
+    #                    '印尼': 'id',
+    #                    '俄罗斯': 'ru',
+    #                    '法国': 'fr',
+    #                    '印度': 'in',
+    #                    '香港': 'hk',
+    #                    '泰国': 'th',
+    #                    '孟加拉': 'bd',
+    #                    }
+    #     if not countryDict.has_key(country):
+    #         print '无法找到该国家代理,自动寻找中国代理'
+    #         country = 'cn'
+    #     else:
+    #         country = countryDict[country]
+    #     self.lock.acquire()
+    #     # header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0'}
+    #     # payload = {'page': '1'}
+    #     url = 'https://proxy.coderbusy.com/classical/country/'+country+'.aspx?page=1'
+    #     while True:
+    #         try:
+    #             if len(self.IPPool) >= self.maxip:
+    #                 break
+    #             driver.get(url)
+    #             # soupIP = BeautifulSoup(response, 'html.parser')
+    #             trList = driver.find_elements_by_tag_name('tr')
+    #             for tr in trList[1:]:
+    #                 tdList = tr.find_elements_by_tag_name('td')
+    #                 ip = tdList[0].text.strip()
+    #                 if ip in self.failedPool:
+    #                     # print 'skip'
+    #                     continue
+    #                 points = tdList[1].text
+    #                 port = tdList[2].text
+    #                 protocol = tdList[5].text.strip()
+    #                 delay = tdList[10].text[:-1]
+    #                 if float(points) < minPoints or float(delay) > maxLatency:
+    #                     continue
+    #                 if protocol == 'HTTP':
+    #                     self.addToPool(ip, port, foreign='f')
+    #                 elif protocol == 'HTTPS':
+    #                     self.addToPool(ip, port, httpType='https', foreign='f')
+    #                 if len(self.IPPool) >= self.maxip:
+    #                     break
+    #             pages = driver.find_elements_by_class_name('page-item')
+    #             nextPage = pages[len(pages) - 3].find_element_by_tag_name('a').get_attribute('href')
+    #             lastPage = pages[len(pages) - 2].find_element_by_tag_name('a').get_attribute('href')
+    #
+    #             if nextPage == lastPage:
+    #                 break
+    #             else:
+    #                 url = nextPage
+    #         except Exception, e:
+    #             print e.message
+    #             continue
+    #     self.lock.release()
 
     def getChineseIP(self):
         self.lock.acquire()
@@ -263,16 +302,16 @@ class IPProxy:
                 continue
         self.lock.release()
 
-    def __autoRefresh(self, china, country='中国', minPoints=30, maxLatency=3):
+    def __autoRefresh(self, foreign, country='中国'):
         while 1:
             # 每分钟刷新
             time.sleep(60)
             print 'refresh'
             if len(self.IPPool) < self.maxip / 2:
-                if china:
+                if not foreign:
                     self.getChineseIP()
                 else:
-                    self.getForeignIP(country, minPoints, maxLatency)
+                    self.getForeignIP(country)
             self.__save2File()
 
     def __save2File(self):
@@ -318,7 +357,7 @@ class IPProxy:
             return self._httpType + ' ' + self._ip + ' ' + self._port
 
         def printString(self):
-            return self._httpType + ' ' + self._ip + ' ' + self._port + ' ' + self.foreign
+            return self._httpType + ' ' + self._ip + ' ' + self._port + ' ' + self.foreign + ' ' + self.location
 
         def __cmp__(self, other):
             if self.getString() == other.getString():
@@ -340,9 +379,9 @@ if __name__ == '__main__':
     # lists = [testip]
     # a = testip2 in lists
     # print a
-    test = IPProxy()
-    requests.get('https://www.bilibili.com', proxies=test.IPPool[0].getProxyDict(), verify=False)
-    print test.getAllAvailableIP('https://www.bilibili.com')
+    test = IPProxy(country='ttt')
+    # requests.get('https://www.bilibili.com', proxies=test.IPPool[0].getProxyDict(), verify=False)
+    # print test.getAllAvailableIP('https://www.bilibili.com')
     # print test.getAvailableIP('http://www.bilibili.com', headers={})
     # print test.getAllAvailableIP('http://www.bilibili.com', 9)
 

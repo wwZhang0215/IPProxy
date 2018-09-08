@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='IPProxy',
-    version='0.10',
+    version='1.0',
     packages=[''],
     url='https://github.com/johnsonzww/IPProxy',
     license='',
@@ -13,8 +13,5 @@ setup(
     requires=[
         'bs4',
         'requests',
-        'selenium',
-        # 'pillow',
-        # 'pytesseract'
     ]
 )

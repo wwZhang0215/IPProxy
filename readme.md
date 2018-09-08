@@ -8,16 +8,12 @@
 python 2.7
 bs4
 requests
-selenium
 
 ##### 安装IPProxy
 [下载](dist)最新版本的IPProxy
 解压tar.gz文件
 在当前目录下执行
 >python setup.py install
-
-当需要获取国外代理时，需要将压缩包中的chromedriver.exe复制到项目目录下
-若复制后仍无法使用，请自行百度下载对应chrome版本的chromedriver
 
 ##### 初始化IPProxy
 
@@ -63,6 +59,11 @@ except requests.exceptions.ProxyError:
 [more api](api.md)
 
 #### 更新说明
+
+##### v1.0
+
+* 更换了国外代理的获取地址，提高了速度和可用性
+* IP代理现在可以知道位置了
 
 ##### v0.10
 
