@@ -13,6 +13,8 @@ setup(
     requires=[
         'bs4',
         'requests',
-        'selenium'
+        'selenium',
+        # 'pillow',
+        # 'pytesseract'
     ]
 )

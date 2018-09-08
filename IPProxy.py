@@ -33,16 +33,16 @@ class IPProxy:
             self.__autoRefreshThread.start()
 
     # 手动增加IP代理地址
-    def addToPool(self, address, port, httpType='http', foreign='c'):
+    def addToPool(self, address, port, httpType='http', foreign='c', location='unknown'):
         ip = self.IP()
-        ip.setProxy(httpType, address, port, foreign)
+        ip.setProxy(httpType, address, port, foreign, location)
         if ip in self.IPPool:
             return
         if self.__checkConnection(ip):
             # self.lock.acquire()  # lock
             self.IPPool.append(ip)
             # self.lock.release()  # unlock
-            print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
+            print 'add proxy ' + ip.getString() + ' (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
         else:
             return 'proxy ip not usable'
 
@@ -82,7 +82,7 @@ class IPProxy:
             ip.setProxy(ipSet[0], ipSet[1], ipSet[2], ipSet[3])
             if self.__checkConnection(ip) is True:
                 self.IPPool.append(ip)
-                print 'add proxy (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
+                print 'add proxy ' + ip.getString() + ' (' + str(len(self.IPPool)) + '/' + str(self.maxip) + ')'
             if len(self.IPPool) >= self.maxip:
                 break
         ipFile.close()
@@ -251,11 +251,12 @@ class IPProxy:
                         # print 'skip'
                         continue
                     port = tds[2].text.strip()
+                    location = tds[3].text.strip()
                     protocol = tds[5].text.strip()
                     if protocol == 'HTTP':
-                        self.addToPool(ip, port)
+                        self.addToPool(ip, port, location=location)
                     elif protocol == 'HTTPS':
-                        self.addToPool(ip, port, httpType='https')
+                        self.addToPool(ip, port, httpType='https', location=location)
                     if len(self.IPPool) >= self.maxip:
                         break
             except:
@@ -292,12 +293,14 @@ class IPProxy:
             self.banList = []
             self.lastUsedTime = 0
             self.foreign = 'c'
+            self.location = 'unknown'
 
-        def setProxy(self, httpType, ip, port, foreign='c'):
+        def setProxy(self, httpType, ip, port, foreign='c', location='unknown'):
             self.setType(httpType)
             self.setPort(port)
             self.setIP(ip)
             self.foreign = foreign
+            self.location = location
 
         def setType(self, httpType):
             self._httpType = httpType
@@ -327,7 +330,7 @@ class IPProxy:
 
 
 if __name__ == '__main__':
-    test = IPProxy(maxip=5, country='美国', maxLatency=10, minPoints=5)
+    # test = IPProxy(maxip=5, country='美国', maxLatency=10, minPoints=5)
     # test.addFromFile('ip.txt')
     # testip = IP()
     # testip.setProxy('https', '0.0.0.0', '80')
@@ -337,8 +340,9 @@ if __name__ == '__main__':
     # lists = [testip]
     # a = testip2 in lists
     # print a
-    # test.getOnlineIP()
-    print test.getAllAvailableIP('http://www.bilibili.com')
+    test = IPProxy()
+    requests.get('https://www.bilibili.com', proxies=test.IPPool[0].getProxyDict(), verify=False)
+    print test.getAllAvailableIP('https://www.bilibili.com')
     # print test.getAvailableIP('http://www.bilibili.com', headers={})
     # print test.getAllAvailableIP('http://www.bilibili.com', 9)
 
