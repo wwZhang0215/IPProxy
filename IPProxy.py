@@ -172,7 +172,7 @@ class IPProxy:
             return {}
         ips.sort()
         ips[0].lastUsedTime = time.time()
-        return ips[0].getProxyDict()
+        return ips[0].getProxyString()
 
     def getForeignIP(self, country='all'):
         self.lock.acquire()
@@ -353,6 +353,9 @@ class IPProxy:
         def getProxyDict(self):
             return {self._httpType: self._ip + ':' + self._port}
 
+        def getProxyString(self):
+            return self._httpType+'://' + self._ip + ':' + self._port
+
         def getString(self):
             return self._httpType + ' ' + self._ip + ' ' + self._port
 
@@ -379,7 +382,8 @@ if __name__ == '__main__':
     # lists = [testip]
     # a = testip2 in lists
     # print a
-    test = IPProxy(country='ttt')
+    test = IPProxy(foreign=False)
+    print test.IPPool[0].getProxyString()
     # requests.get('https://www.bilibili.com', proxies=test.IPPool[0].getProxyDict(), verify=False)
     # print test.getAllAvailableIP('https://www.bilibili.com')
     # print test.getAvailableIP('http://www.bilibili.com', headers={})
