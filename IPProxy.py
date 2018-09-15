@@ -18,6 +18,8 @@ class IPProxy:
         self.failedPool = []
         self.checkedUrl = []
         self.maxip = maxip
+        self.foreign = foreign
+        self.country = country
         # init from saved file
 
         if online and foreign is False:
@@ -144,7 +146,10 @@ class IPProxy:
                     self.IPPool.remove(ip)
                     self.failedPool.append(ip._ip)
             self.lock.release()
-            self.getChineseIP()
+            if self.foreign:
+                self.getForeignIP(self.country)
+            else:
+                self.getChineseIP()
             availableIPs = self.__getAllAvailableIP(rootUrl)
 
         return availableIPs
@@ -351,7 +356,7 @@ class IPProxy:
             self._port = port
 
         def getProxyDict(self):
-            return {self._httpType: self._ip + ':' + self._port}
+            return {self._httpType: self._httpType+'://' + self._ip + ':' + self._port}
 
         def getProxyString(self):
             return self._httpType+'://' + self._ip + ':' + self._port
@@ -382,9 +387,13 @@ if __name__ == '__main__':
     # lists = [testip]
     # a = testip2 in lists
     # print a
-    test = IPProxy(foreign=False)
-    print test.IPPool[0].getProxyString()
-    # requests.get('https://www.bilibili.com', proxies=test.IPPool[0].getProxyDict(), verify=False)
+    # response = requests.get('https://www.google.com', proxies={'https':'https://127.0.0.1:1080'})
+    test = IPProxy(maxip=5, foreign=False)
+    proxy = test.getAvailableIP('https://www.thetimes.co.uk')
+    print proxy
+    # print test.IPPool[0].getProxyString()
+    response = requests.get('https://www.thetimes.co.uk', proxies=test.IPPool[0].getProxyDict(), verify=False)
+    print response.text
     # print test.getAllAvailableIP('https://www.bilibili.com')
     # print test.getAvailableIP('http://www.bilibili.com', headers={})
     # print test.getAllAvailableIP('http://www.bilibili.com', 9)
